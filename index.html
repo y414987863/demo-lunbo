@@ -106,7 +106,7 @@
                     e.preventDefault();
                     vm.ismove = true;
                     let endX = e.originalEvent.changedTouches[0].pageX;
-                    let deg = 180 * (endX - vm.moveX) / (Math.PI * vm.ctnHeight) * 0.5;
+                    let deg = 180 * (endX - vm.moveX) / (Math.PI * vm.ctnHeight) * 1;
                     vm.moveByDeg(deg);
                     if (Math.abs(vm.endXcount) > vm.singleD) {
                         vm['_to' + (vm.endXcount > 0 ? 'left' : 'right')](vm);
