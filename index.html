@@ -52,6 +52,7 @@
     </style>
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdn.bootcss.com/jquery.transit/0.9.12/jquery.transit.min.js"></script>
+    <script src="https://cdn.bootcss.com/lodash.js/4.17.5/lodash.min.js"></script>
 </head>
 
 <body>
@@ -81,7 +82,7 @@
             this.endXcount = 0;
             this.canAnima = true;
             this.ismove = false;
-            this.el = $('#'+id);
+            this.el = $('#' + id);
             this.items = this.el.find('li');
             this.ctnWith = this.el.outerWidth();
             this.ctnHeight = this.el.outerHeight();
@@ -101,7 +102,7 @@
                 vm.el.on("touchstart", function (e) {
                     vm.startX = vm.moveX = e.originalEvent.changedTouches[0].pageX
                 });
-                vm.el.on("touchmove", function (e) {
+                vm.el.on("touchmove", _.throttle(function (e) {
                     e.preventDefault();
                     vm.ismove = true;
                     let endX = e.originalEvent.changedTouches[0].pageX;
@@ -113,7 +114,7 @@
                         vm.endXcount = vm.startX = 0
                     }
                     vm.moveX = endX
-                });
+                }, 10));
                 vm.el.on("touchend", function (e) {
                     if (vm.ismove) {
                         vm.startX = vm.moveX = 0;
@@ -132,7 +133,7 @@
                             }
                         }
                     }
-                })
+                });
             },
             _restatus: function (isanimat) {
                 let vm = this;
