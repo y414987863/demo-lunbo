@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0
+        }
+
+        li {
+            list-style: none
+        }
+
+        .foot-nav,
+        .main {
+            border: 1px solid #e0e0e0
+        }
+
+        .foot-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 150px
+        }
+
+        .foot-nav>.wrap {
+            position: relative;
+            top: 30px;
+            width: 100%;
+            height: 100%
+        }
+
+        .foot-nav .nav-item {
+            position: absolute;
+            left: 50%;
+            width: 25%;
+            height: 100%;
+            text-align: center;
+            background: bisque;
+            border: 1px solid #a0a0a0;
+            transform-origin: center 200%
+        }
+
+        .foot-nav .nav-item.ac {
+            background: #a0a0a0
+        }
+    </style>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/jquery.transit/0.9.12/jquery.transit.min.js"></script>
+</head>
+
+<body>
+    <div class="main">
+        内容
+    </div>
+    <div id="lunbo" class="foot-nav">
+        <div class="wrap">
+            <ul>
+                <li class="nav-item">111111</li>
+                <li class="nav-item">222222</li>
+                <li class="nav-item">333333</li>
+                <li class="nav-item">444444</li>
+                <li class="nav-item">555555</li>
+                <li class="nav-item">666666</li>
+                <li class="nav-item">777777</li>
+            </ul>
+        </div>
+    </div>
+    <script>
+        function LunBo(id, deg) {
+            this.id = id;
+            this.ms = 200;
+            this.maxDeg = deg;
+            this.startX = 0;
+            this.moveX = 0;
+            this.endXcount = 0;
+            this.canAnima = true;
+            this.ismove = false;
+            this.el = $('#'+id);
+            this.items = this.el.find('li');
+            this.ctnWith = this.el.outerWidth();
+            this.ctnHeight = this.el.outerHeight();
+            this.itemWith = this.items.outerWidth();
+            this.len = this.items.length;
+            if (this.len % 2 === 0) {
+                throw Error('li必须为奇数');
+            }
+            this._init()
+        }
+        LunBo.prototype = {
+            _init: function () {
+                let vm = this;
+                vm.singleD = vm.maxDeg / vm.len;
+                vm.el.find('.wrap').css('left', -vm.itemWith / 2 + 'px');
+                vm._restatus();
+                vm.el.on("touchstart", function (e) {
+                    vm.startX = vm.moveX = e.originalEvent.changedTouches[0].pageX
+                });
+                vm.el.on("touchmove", function (e) {
+                    e.preventDefault();
+                    vm.ismove = true;
+                    let endX = e.originalEvent.changedTouches[0].pageX;
+                    let deg = 180 * (endX - vm.moveX) / (Math.PI * vm.ctnHeight) * 0.5;
+                    vm.moveByDeg(deg);
+                    if (Math.abs(vm.endXcount) > vm.singleD) {
+                        vm['_to' + (vm.endXcount > 0 ? 'left' : 'right')](vm);
+                        vm._restatus();
+                        vm.endXcount = vm.startX = 0
+                    }
+                    vm.moveX = endX
+                });
+                vm.el.on("touchend", function (e) {
+                    if (vm.ismove) {
+                        vm.startX = vm.moveX = 0;
+                        if (Math.abs(vm.endXcount) !== 0 && Math.abs(vm.endXcount) > vm.singleD / 2) {
+                            vm['_to' + (vm.endXcount > 0 ? 'left' : 'right')](vm)
+                        }
+                        vm._restatus(true);
+                        vm.endXcount = vm.startX = 0;
+                        vm.ismove = false
+                    } else if (vm.canAnima) {
+                        let thisel = e.target;
+                        if (thisel.nodeName === 'LI') {
+                            let thisindex = $(thisel).index();
+                            if (thisindex !== vm.midIndex) {
+                                vm.moveMul(thisindex - vm.midIndex)
+                            }
+                        }
+                    }
+                })
+            },
+            _restatus: function (isanimat) {
+                let vm = this;
+                vm.midIndex = Math.floor(vm.len / 2);
+                vm.items = vm.el.find('li');
+                vm.items.each(function (i) {
+                    $(this).css({
+                        'zIndex': 9999 - Math.abs(i - vm.midIndex)
+                    })[i === vm.midIndex ? 'addClass' : 'removeClass']('ac');
+                    let deg = (i - vm.midIndex) * vm.singleD + 'deg';
+                    let yscal = (vm.len / 2 - Math.abs(i - vm.midIndex)) * 0.03;
+                    $(this).transition({
+                        'rotate': deg,
+                        'scale': i === vm.midIndex ? [1.1, 1 + yscal] : 1 + yscal
+                    }, isanimat ? vm.ms : 0, 'linear')
+                })
+            },
+            _moveOne: function (ms, lr) {
+                let dtd = $.Deferred();
+                let vm = this;
+                let endCount = 0;
+                vm.items.each(function (i) {
+                    if (lr === 'l') {
+                        $(this).transition({
+                            'rotate': '+=' + vm.singleD
+                        }, ms, 'linear', function () {
+                            if (++endCount === vm.len) {
+                                vm._toleft(vm);
+                                vm._restatus();
+                                dtd.resolve()
+                            }
+                        })
+                    } else if (lr === 'r') {
+                        $(this).transition({
+                            'rotate': '-=' + vm.singleD
+                        }, ms, 'linear', function () {
+                            if (++endCount === vm.len) {
+                                vm._toright(vm);
+                                vm._restatus();
+                                dtd.resolve()
+                            }
+                        })
+                    }
+                });
+                return dtd
+            },
+            _toleft: function (vm) {
+                $(vm.items[vm.len - 1]).clone().prependTo(vm.el.find('ul'));
+                vm.el.find('li').last().remove()
+            },
+            _toright: function (vm) {
+                $(vm.items[0]).clone().appendTo(vm.el.find('ul'));
+                vm.el.find('li').first().remove()
+            },
+            moveMul: function (num) {
+                let vm = this;
+                let count = 0;
+                vm.canAnima = false;
+                (function moveStart() {
+                    vm._moveOne(parseInt(vm.ms / Math.abs(num)), num < 0 ? 'l' : 'r').done(function () {
+                        if (++count < Math.abs(num)) {
+                            moveStart()
+                        } else {
+                            vm.canAnima = true
+                        }
+                    })
+                })()
+            },
+            moveByDeg: function (deg) {
+                let vm = this;
+                vm.endXcount += deg;
+                vm.items.each(function (i) {
+                    $(this).transition({
+                        'rotate': '+=' + deg
+                    }, 0, 'linear')
+                })
+            }
+        };
+        let lunbo1 = new LunBo('lunbo', 75);
+    </script>
+</body>
+
+</html>
