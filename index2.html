@@ -51,9 +51,8 @@
         }
     </style>
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
-    <script src="https://cdn.bootcss.com/hammer.js/2.0.8/hammer.min.js"></script>
-    <script src="https://cdn.bootcss.com/velocity/1.5.1/velocity.min.js"></script>
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/velocity/1.5.0/velocity.min.js"></script> -->
+    <script src="https://cdn.bootcss.com/jquery.transit/0.9.12/jquery.transit.min.js"></script>
+    <script src="https://cdn.bootcss.com/lodash.js/4.17.5/lodash.min.js"></script>
 </head>
 
 <body>
@@ -68,6 +67,8 @@
                 <li class="nav-item">333333</li>
                 <li class="nav-item">444444</li>
                 <li class="nav-item">555555</li>
+                <li class="nav-item">666666</li>
+                <li class="nav-item">777777</li>
             </ul>
         </div>
     </div>
@@ -98,51 +99,56 @@
                 vm.singleD = vm.maxDeg / vm.len;
                 vm.el.find('.wrap').css('left', -vm.itemWith / 2 + 'px');
                 vm._restatus();
-                // vm.el.on("touchstart", function (e) {
-                //     vm.startX = vm.moveX = e.originalEvent.changedTouches[0].pageX
-                // });
-                // vm.el.on("touchmove", _.throttle(function (e) {
-                //     e.preventDefault();
-                //     vm.ismove = true;
-                //     let endX = e.originalEvent.changedTouches[0].pageX;
-                //     let deg = 180 * (endX - vm.moveX) / (Math.PI * vm.ctnHeight) * 1;
-                //     vm.moveByDeg(deg);
-                //     if (Math.abs(vm.endXcount) > vm.singleD) {
-                //         vm['_to' + (vm.endXcount > 0 ? 'left' : 'right')](vm);
-                //         vm._restatus();
-                //         vm.endXcount = vm.startX = 0
-                //     }
-                //     vm.moveX = endX
-                // }, 10));
-                // vm.el.on("touchend", function (e) {
-                //     if (vm.ismove) {
-                //         vm.startX = vm.moveX = 0;
-                //         if (Math.abs(vm.endXcount) !== 0 && Math.abs(vm.endXcount) > vm.singleD / 2) {
-                //             vm['_to' + (vm.endXcount > 0 ? 'left' : 'right')](vm)
-                //         }
-                //         vm._restatus(true);
-                //         vm.endXcount = vm.startX = 0;
-                //         vm.ismove = false
-                //     } else if (vm.canAnima) {
-                //         let thisel = e.target;
-                //         if (thisel.nodeName === 'LI') {
-                //             let thisindex = $(thisel).index();
-                //             if (thisindex !== vm.midIndex) {
-                //                 vm.moveMul(thisindex - vm.midIndex)
-                //             }
-                //         }
-                //     }
-                // });
+                vm.el.on("touchstart", function (e) {
+                    vm.startX = vm.moveX = e.originalEvent.changedTouches[0].pageX
+                });
+                vm.el.on("touchmove", _.throttle(function (e) {
+                    e.preventDefault();
+                    vm.ismove = true;
+                    let endX = e.originalEvent.changedTouches[0].pageX;
+                    let deg = 180 * (endX - vm.moveX) / (Math.PI * vm.ctnHeight) * 1;
+                    vm.moveByDeg(deg);
+                    if (Math.abs(vm.endXcount) > vm.singleD) {
+                        vm['_to' + (vm.endXcount > 0 ? 'left' : 'right')](vm);
+                        vm._restatus();
+                        vm.endXcount = vm.startX = 0
+                    }
+                    vm.moveX = endX
+                }, 10));
+                vm.el.on("touchend", function (e) {
+                    if (vm.ismove) {
+                        vm.startX = vm.moveX = 0;
+                        if (Math.abs(vm.endXcount) !== 0 && Math.abs(vm.endXcount) > vm.singleD / 2) {
+                            vm['_to' + (vm.endXcount > 0 ? 'left' : 'right')](vm)
+                        }
+                        vm._restatus(true);
+                        vm.endXcount = vm.startX = 0;
+                        vm.ismove = false
+                    } else if (vm.canAnima) {
+                        let thisel = e.target;
+                        if (thisel.nodeName === 'LI') {
+                            let thisindex = $(thisel).index();
+                            if (thisindex !== vm.midIndex) {
+                                vm.moveMul(thisindex - vm.midIndex)
+                            }
+                        }
+                    }
+                });
             },
             _restatus: function (isanimat) {
                 let vm = this;
                 vm.midIndex = Math.floor(vm.len / 2);
                 vm.items = vm.el.find('li');
                 vm.items.each(function (i) {
-                    $(this).velocity({
-                        rotateZ: (i - vm.midIndex) * vm.singleD,
-                        'zIndex': 9999 - Math.abs(i - vm.midIndex)  //完成之后
+                    $(this).css({
+                        'zIndex': 9999 - Math.abs(i - vm.midIndex)
                     })[i === vm.midIndex ? 'addClass' : 'removeClass']('ac');
+                    let deg = (i - vm.midIndex) * vm.singleD + 'deg';
+                    let yscal = (vm.len / 2 - Math.abs(i - vm.midIndex)) * 0.03;
+                    $(this).transition({
+                        'rotate': deg,
+                        'scale': i === vm.midIndex ? [1.1, 1 + yscal] : 1 + yscal
+                    }, isanimat ? vm.ms : 0, 'linear')
                 })
             },
             _moveOne: function (ms, lr) {
